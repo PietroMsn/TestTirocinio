@@ -1,0 +1,19 @@
+// Per la traslazione si potrebbe creare una sorta di joystick da spostare con con il dito...selezioni l'oggetto toccandolo e poi sposti //il dito nella direzione in cui lo devi far andare.
+
+
+// per la rotazione fare la stessa cosa col joystick
+
+
+///////////  IMPORTANTE !!!!!!!!!!!!!!!!
+
+
+Per oggi far funzionare questo!!!!!
+
+- risistemare ObjectControllerCube
+- vedere perchè lo script non funziona
+- far funzionare la rotazione sulla terra
+- finire tutte e tre le rotazioni (provare quella col joystick)
+- mettere l'opzione che continui la rotazione sopra una certa posizione (nella rotazione due) 
+
+
+

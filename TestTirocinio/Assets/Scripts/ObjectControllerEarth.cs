@@ -9,10 +9,10 @@ public class ObjectControllerEarth : MonoBehaviour {
 	Controller LeapController;
 	
 	
-	public GameObject[] palm;
+	//public GameObject[] palm;
 	
-	public GameObject OptionScale;
-	public GameObject OptionRotate;
+	//public GameObject OptionScale;
+	//public GameObject OptionRotate;
 	public Material ColorRed;
 	public Material ColorBlue;
 	
@@ -26,6 +26,13 @@ public class ObjectControllerEarth : MonoBehaviour {
 	private HandList hands;
 	private Hand LeftHand;
 	private Hand RightHand;
+
+	private HandList previousHands;
+	private Hand previousLeftHand;
+	private Hand previousRightHand;
+
+	private Vector previousRightPalmPosition;
+	private Vector previousLeftPalmPosition;
 	
 	
 	private Vector RightPalmPosition;
@@ -50,15 +57,25 @@ public class ObjectControllerEarth : MonoBehaviour {
 	private bool seeHandsBool = false;
 	//private bool otherRotation = false;
 	//private bool otherRotation2 = false;
-	private bool PinchRotationBool = false;
-	private bool PinchScaleBool = false;
-	private bool translatePinch = false;
+	
+
+
+
+	private bool FingerRotation = false;
+	private bool HandsRotation = false;
+	private bool MyRotation = true;
+
+
+	private bool YouWin = false;
 	
 	private string choice = null;
 	private string rotationSelection = null;
 	private string scaleSelection = null;
 	private string pinchRotationSelection = null;
 	private string pinchScaleSelection = null;
+	private Vector3 Goal;
+	private Vector3 ActualRotation;
+	private float constant = 0.05f;
 	
 	
 	// Use this for initialization
@@ -67,17 +84,18 @@ public class ObjectControllerEarth : MonoBehaviour {
 		LeapController = new Controller();
 		
 		LeapController.EnableGesture(Gesture.GestureType.TYPECIRCLE); // abilito il riconoscimento della gestre TYPECIRCLE
-		
+		LeapController.EnableGesture(Gesture.GestureType.TYPE_SCREEN_TAP);
 		// la visibilità dell'oggetto corrente viene messa di default a false
 		gameObject.active = false;
 		
 		// leggo nella stringa "choice" in PlayerPrefs, la quale viene impostata nel menù iniziale
 		// per la selezione dell'oggetto da manipolare
-		choice = PlayerPrefs.GetString ("choice");
+		//choice = PlayerPrefs.GetString ("choice");
 		
 		// se l'oggetto corrente è l'oggetto selezionato, viene attivato
 	
 			gameObject.active = true;
+			Goal = new Vector3(-0.1f,-0.5f,0.7f);
 		
 		
 		//for (int i = 0; i < 5; i++)
@@ -87,6 +105,8 @@ public class ObjectControllerEarth : MonoBehaviour {
 		//	palm2Finger[i].transform.position = new Vector3(0f, 0f, 0f);
 		
 		//FingerList allFingers = frame.Fingers;
+
+
 		
 	}
 	
@@ -102,108 +122,105 @@ public class ObjectControllerEarth : MonoBehaviour {
 		
 		LeftPalmPosition = LeftHand.PalmPosition;
 		RightPalmPosition = RightHand.PalmPosition;
+
+		hands = frame.Hands;
+		LeftHand = hands.Leftmost;
+		RightHand = hands.Rightmost;
 		
-		//FingerList allFingers = frame.Fingers;
-		
-		// estraggo il contenuto delle stringhe di selezione impostate dalla VRGUI per
-		// vedere quali gesture sono attive
-		rotationSelection = PlayerPrefs.GetString ("rotation");
-		scaleSelection = PlayerPrefs.GetString ("scale");
-		pinchRotationSelection = PlayerPrefs.GetString ("pinchRotation");
-		pinchScaleSelection = PlayerPrefs.GetString ("pinchScale");
-		
-		
-		
-		// faccio un controllo sulle stringhe e metto a true le variabili 
-		// relative alle gesture che l'utente ha deciso di attivare
-		/*if(pinchScaleSelection.Equals("true"))
-			PinchScaleBool = true;
-		else 
-			PinchScaleBool = false;
-		
-		if(pinchRotationSelection.Equals("true"))
-			PinchRotationBool = true;
-		else 
-			PinchRotationBool = false;
-		
-		if(rotationSelection.Equals("true"))
-			rotationBool = true;
-		else 
-			rotationBool = false;
-		
-		if(scaleSelection.Equals("true"))
-			scaleBool = true;
-		else 
-			scaleBool = false;*/
-		
-		
-		
-		//if(seeHandsBool == true)
-		//	seeHands();
-		
-		//if(scaleBool == true)
-		//	scale();
-		
-		
-		
-		// quando seleziono la rotazione con il pinch, controllo che sia fatto con la mano destra e sia maggiore di un dato valore
-		// chiamo la funzione per la rotazione
-		/*if (PinchRotationBool) {
-			
-			if (RightHand.PinchStrength > 0.7f) {
+		previousHands = previous.Hands;
+		previousLeftHand = previousHands.Leftmost;
+		previousRightHand = previousHands.Rightmost;
 				
-				renderer.material = ColorBlue;
-				
-				if (RightHand.IsValid && LeftHand.IsValid)
-					
-					PinchRotation ();
-				
-			} else {
-				renderer.material = ColorRed;
-			}
-		}*/
+		previousLeftPalmPosition = previousLeftHand.PalmPosition;
+		previousRightPalmPosition = previousRightHand.PalmPosition;
+
+		LeftPalmPosition = LeftHand.PalmPosition;
+		RightPalmPosition = RightHand.PalmPosition;
 		
-		
-		
-		/*if(translatePinch) {
-			if (RightHand.PinchStrength > 0.7f) {
-				
-				renderer.material = ColorBlue;
-				
-				if (RightHand.IsValid && LeftHand.IsValid)
-					
-					TranslatePinch();
-				
-			} else {
-				renderer.material = ColorRed;
-			}
-		}*/
-		
-		
-		
-		
-		//faccio la stessa procedura con la scala
-		/*if (PinchScaleBool) {
-			
-			if (RightHand.PinchStrength > 0.7f) {
-				
-				renderer.material = ColorBlue;
-				
-				if (RightHand.IsValid && LeftHand.IsValid)
-					PinchScale ();
-				
-			} else {
-				renderer.material = ColorRed;
-			}
-			
-		}*/
-		
-		
-		// se seleziono la rotazione normale, chiamo la funzione rotation	
-		//if(rotationBool)
-			Rotation();
+		//Debug.Log(transform.rotation);
+			if(MyRotation)
+				Rotation();
+			if(HandsRotation)
+				NewRotation();
+			if(FingerRotation)
+				RotationFingerPosition();
+			ActualRotation = new Vector3(transform.rotation.x, transform.rotation.y, transform.rotation.z);
+
+			if(ActualRotation.x > Goal.x -0.3f && ActualRotation.x < Goal.x +0.3f
+				&& ActualRotation.y > Goal.y -0.3f && ActualRotation.y < Goal.y +0.3f
+				&& ActualRotation.z > Goal.z -0.3f && ActualRotation.z < Goal.z +0.3f)
+				YouWin = true;
+
+			Debug.Log(ActualRotation + " " + Goal);
+			if(YouWin)
+					Debug.Log("Passa al prossimo livello");
 			
 		
+	}
+
+	void RotationFingerPosition(){
+
+				float[] fingerPositionX = new float[5];
+				float[] fingerPositionY = new float[5];
+				float[] fingerPositionZ = new float[5];
+
+				for (int f = 0; f < RightHand.Fingers.Count; f++) {
+					fingerPositionX[f] = RightHand.Fingers[f].TipPosition.x * constant;
+					fingerPositionY[f] = RightHand.Fingers[f].TipPosition.y * constant;
+					fingerPositionZ[f] = RightHand.Fingers[f].TipPosition.z * constant;
+				}	
+
+				if(fingerPositionX[0] > transform.position.x)
+					transform.Rotate (Vector3.right, Time.deltaTime * +50f, Space.World);
+
+				if(fingerPositionX[0] <= transform.position.x)
+					transform.Rotate (Vector3.right, Time.deltaTime * -50f, Space.World);
+
+				if(fingerPositionY[0] > transform.position.y)
+					transform.Rotate (Vector3.up, Time.deltaTime * 50f, Space.World);
+
+				if(fingerPositionY[0] <= transform.position.y)
+					transform.Rotate (Vector3.up, Time.deltaTime * -50f, Space.World);
+
+	}
+
+
+	void NewRotation() {
+
+		/*una mano va in avanti e una va indietro, una va su e l'altra giù...da una parte o dall'altra, determina 
+		 * se il movimento è orario o antiorario*/
+
+		if (LeftHand.IsValid && RightHand.IsValid) {
+
+						
+							if (previousRightPalmPosition.z < RightPalmPosition.z && previousLeftPalmPosition.z > LeftPalmPosition.z)
+										transform.Rotate (Vector3.up, Time.deltaTime * -50f, Space.World);
+										
+
+							if (previousRightPalmPosition.z > RightPalmPosition.z && previousLeftPalmPosition.z < LeftPalmPosition.z)
+										transform.Rotate (Vector3.up, Time.deltaTime * 50f, Space.World);
+										
+						/*}
+
+						if(RightPalmPosition.y - LeftPalmPosition.y > 0) 
+										obj.transform.Rotate (Vector3.right, Time.deltaTime * -80f, Space.World);
+
+						else if(LeftPalmPosition.y - RightPalmPosition.y > 0)
+										obj.transform.Rotate (Vector3.right, Time.deltaTime * 80f, Space.World);
+
+						else{*/
+							if (previousRightPalmPosition.y < RightPalmPosition.y && previousLeftPalmPosition.y > LeftPalmPosition.y)
+										transform.Rotate (Vector3.right, Time.deltaTime * -50f, Space.World);
+										
+
+							if (previousRightPalmPosition.y > RightPalmPosition.y && previousLeftPalmPosition.y < LeftPalmPosition.y)
+										transform.Rotate (Vector3.right, Time.deltaTime * 50f, Space.World);
+						//}			
+
+				}
+		
+	
+	
 	}
 	
 	
@@ -218,12 +235,12 @@ public class ObjectControllerEarth : MonoBehaviour {
 			float pitch = RightHand.PalmNormal.Pitch * -10f;
 			
 			//metodo aggiornato, se è attivato il roll disattivo il pitch e viceversa (menu)				
-			if ((roll >= 3f || roll <= -3f)) {
+			if ((roll >= 4f || roll <= -4f)) {
 				
-				if (roll >= 3)
-					transform.Rotate (Vector3.up, Time.deltaTime * 60f, Space.Self);
+				if (roll >= 4)
+					transform.Rotate (Vector3.up, Time.deltaTime * 50f, Space.World);
 				else 
-					transform.Rotate (Vector3.up, Time.deltaTime * -60f, Space.Self);
+					transform.Rotate (Vector3.up, Time.deltaTime * -50f, Space.World);
 				
 				//transform.rotation = Quaternion.Slerp(transform.rotation, target, Time.deltaTime * smooth); // cambiare questa funzione, non è precisa!!!
 			}
@@ -232,9 +249,9 @@ public class ObjectControllerEarth : MonoBehaviour {
 				
 				
 				if (pitch >= 18)
-					transform.Rotate (Vector3.right, Time.deltaTime * -60f, Space.Self);
+					transform.Rotate (Vector3.right, Time.deltaTime * -50f, Space.World);
 				else 
-					transform.Rotate (Vector3.right, Time.deltaTime * 60f, Space.Self);
+					transform.Rotate (Vector3.right, Time.deltaTime * 50f, Space.World);
 				
 				//transform.rotation = Quaternion.Slerp(transform.rotation, target, Time.deltaTime * smooth); // cambiare questa funzione, non è precisa!!!
 			}

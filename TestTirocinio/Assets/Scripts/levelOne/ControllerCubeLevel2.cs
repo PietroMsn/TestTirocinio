@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using Leap;
-using System;
+//using System;
+
 
 // TODO: ------seeHands: mostro le dita (sfere, posso anche metterle invisibili) e le rendo tutte rigidbody
 // per spostare il cubo
@@ -25,13 +26,12 @@ public class ControllerCubeLevel2 : MonoBehaviour {
 		public GameObject[] leftFingersRep;
 
 		private FingerList allFingers;
-		private Finger[] rightFingers;
-		private Finger[] leftFingers;
-		
+
 		public GameObject OptionScale;
 		public GameObject OptionRotate;
 		public Material ColorRed;
 		public Material ColorBlue;
+
 		public GameObject Target;
 		
 		public float roll;
@@ -64,9 +64,14 @@ public class ControllerCubeLevel2 : MonoBehaviour {
 		private bool translatePinch = false;
 
 		private bool reachedGoal = false;
-		private Vector CubePosition;
-		private Vector TargetPosition;
+		private Vector CubePosition = new Vector(2f, 2f, 2f);
+		private Vector TargetPosition = new Vector(2f, 2f, 2f);
 		private int goalCounter = 0;
+
+		private Vector distance;
+
+		private float TargetX;
+		private float TargetY;
 		
 		
 		// Use this for initialization
@@ -82,11 +87,15 @@ public class ControllerCubeLevel2 : MonoBehaviour {
 	
 
 			//lancio la funzione che posiziona il target per la prima volta
-			refreshTargetPosition(CubePosition, TargetPosition);
+			refreshTargetPosition();
 
 			CubePosition.x = transform.position.x;
 			CubePosition.y = transform.position.y;
 			CubePosition.z = transform.position.z;
+
+			TargetPosition.x = Target.transform.position.x;
+			TargetPosition.y = Target.transform.position.y;
+			TargetPosition.z = Target.transform.position.z;
 
 					
 			//for (int i = 0; i < 5; i++)
@@ -113,22 +122,15 @@ public class ControllerCubeLevel2 : MonoBehaviour {
 			RightPalmPosition = RightHand.PalmPosition;
 			
 			
-			for (int f = 0; f < LeftHand.Fingers.Count; f++) 
-    			leftFingers[f] = LeftHand.Fingers[f];
 			
+			seeHands();
 
-			for (int f = 0; f < RightHand.Fingers.Count; f++) 
-    			leftFingers[f] = RightHand.Fingers[f];
-			
-			
-			if(seeHandsBool == true)
-				seeHands();
-			
+			TranslateFingerPosition();
 			
 			
 			// chiamata al translate
-			if(translatePinch == true){
-
+			
+			/*
 				if (RightHand.PinchStrength > 0.7f) {
 					
 					renderer.material = ColorBlue;
@@ -139,18 +141,20 @@ public class ControllerCubeLevel2 : MonoBehaviour {
 				} else {
 					renderer.material = ColorRed;
 				}
-			}
+			*/
 			
-
-			if(CubePosition.Equals(TargetPosition))
+				// da rivedere completamente!!!!
+			if((CubePosition.x - TargetPosition.x < 5 && CubePosition.x - TargetPosition.x > -5) 
+				&& (CubePosition.y - TargetPosition.y < 5 && CubePosition.y - TargetPosition.y > -5)
+				&& (CubePosition.z - TargetPosition.z < 5 && CubePosition.z - TargetPosition.z > -5))
 				reachedGoal = true;
 
 
 			if(reachedGoal) {
-
-				refreshTargetPosition(CubePosition, TargetPosition);
+				//renderer.material = ColorRed;
+				refreshTargetPosition();
 				goalCounter += 1;
-				reachedGoal = false;
+				reachedGoal = false;	
 
 			}
 
@@ -161,67 +165,98 @@ public class ControllerCubeLevel2 : MonoBehaviour {
 		
 		}
 
+		public void TranslateFingerPosition(){
 
-		void refreshTargetPosition(Vector CubePos, Vector TargetPos){
+				float[] fingerPositionX = new float[5];
+				float[] fingerPositionY = new float[5];
+				float[] fingerPositionZ = new float[5];
+
+				for (int f = 0; f < RightHand.Fingers.Count; f++) {
+					fingerPositionX[f] = RightHand.Fingers[f].TipPosition.x;
+					fingerPositionY[f] = RightHand.Fingers[f].TipPosition.y;
+					fingerPositionZ[f] = RightHand.Fingers[f].TipPosition.z;
+				}	
+
+				if(fingerPositionX[1] > transform.position.x)
+					transform.position = new Vector3(transform.position.x + 1f , transform.position.y, transform.position.z);
+
+				if(fingerPositionX[1] <= transform.position.x)
+					transform.position = new Vector3(transform.position.x - 1f , transform.position.y, transform.position.z);
+
+				if(fingerPositionY[1] > transform.position.y)
+					transform.position = new Vector3(transform.position.x, transform.position.y + 1f, transform.position.z);
+
+				if(fingerPositionY[1] <= transform.position.y)
+					transform.position = new Vector3(transform.position.x, transform.position.y - 1f, transform.position.z);
+
+				Debug.Log(transform.position);
+				Debug.Log(fingerPositionX[1] + "," + fingerPositionY[1] + "," + fingerPositionZ[1]);
+				Debug.Log("\n");
+
+
+	}
+
+
+		void refreshTargetPosition(){
 			Vector newPosition;
+			Random rnd = new Random();
+			TargetX = Random.Range(-180f, 75f);
+			TargetY = Random.Range(25f, 150f);
+			//TargetZ = rnd.Next(1, 13);
+			Target.transform.position = new Vector3(TargetX, TargetY, transform.position.z);
 			// funzione random nel range, diversa da quella del cubo e diversa da quella precedente
 		}
 		
 
 		
-		// metodo per implementare la traslazione dell'oggetto tramite pinch
-		void TranslatePinch(){
-
-			Finger cursor = isNearFinger(); 
-			Vector[] speed = new Vector[5];
-			
-			for (int f = 0; f < LeftHand.Fingers.Count; f++) 
-			 		speed[f] = LeftHand.Fingers[f].TipVelocity;
-			
-			transform.position = new Vector3(RightPalmPosition.x, RightPalmPosition.y, RightPalmPosition.z); 
-		}
-
-		Finger isNearFinger(){
-
-			for (int f = 0; f < LeftHand.Fingers.Count; f++) 
-			if(LeftHand.Fingers[1] != null)
-				return null;
-
-			return LeftHand.Fingers[1];
-		}
+		
 		
 		
 		void seeHands() {
 
-			pinch = RightHand.PinchStrength;
+			// pinch = RightHand.PinchStrength;
 			// funzione per muovere le due sfere che simulano i palmi delle mani
-			Vector3 normal1 = new Vector3(LeftHand.PalmNormal.x, LeftHand.PalmNormal.y, LeftHand.PalmNormal.z* -1);
-			Vector3 normal2 = new Vector3(RightHand.PalmNormal.x, RightHand.PalmNormal.y, RightHand.PalmNormal.z* -1);
+			// Vector3 normal1 = new Vector3(LeftHand.PalmNormal.x, LeftHand.PalmNormal.y, LeftHand.PalmNormal.z* -1);
+			// Vector3 normal2 = new Vector3(RightHand.PalmNormal.x, RightHand.PalmNormal.y, RightHand.PalmNormal.z* -1);
+
+			Debug.Log("entra in see hands");
 
 					
-			if (pinch > 0.7f)
+			/*if (pinch > 0.7f)
 				renderer.material = ColorRed;
 			else 
 				renderer.material = ColorBlue;
 
 					
-			if(!LeftHand.IsValid)
+			/*if(!LeftHand.IsValid)
 				palm[0].renderer.enabled = false;
 			if(!RightHand.IsValid)
 				palm[1].renderer.enabled = false;
 					
 			palm[0].transform.position = new Vector3(LeftPalmPosition.x , LeftPalmPosition.y , LeftPalmPosition.z  * (-1f));
-			palm[1].transform.position = new Vector3(RightPalmPosition.x , RightPalmPosition.y , RightPalmPosition.z * (-1f));
+			palm[1].transform.position = new Vector3(RightPalmPosition.x , RightPalmPosition.y , RightPalmPosition.z * (-1f));*/
 
 
 			
-			for (int f = 0; f < LeftHand.Fingers.Count; f++) 
-    			leftFingersRep[f].transform.position = new Vector3(LeftHand.Fingers[f].TipPosition.x, LeftHand.Fingers[f].TipPosition.y, LeftHand.Fingers[f].TipPosition.z);
-			
+			for (int f = 0; f < LeftHand.Fingers.Count; f++) {
+				    				Debug.Log("sono nel for");
 
-			for (int f = 0; f < RightHand.Fingers.Count; f++) 
-    			rightFingersRep[f].transform.position = new Vector3(RightHand.Fingers[f].TipPosition.x, RightHand.Fingers[f].TipPosition.y, RightHand.Fingers[f].TipPosition.z);
-			
+				if(LeftHand.Fingers[f].IsValid){
+    				leftFingersRep[f].transform.position = new Vector3(LeftHand.Fingers[f].TipPosition.x, LeftHand.Fingers[f].TipPosition.y, -LeftHand.Fingers[f].TipPosition.z);
+				
+    				//Debug.Log("sono nel for");
+
+				}
+    			else
+    				leftFingersRep[f].active = false;
+			}
+
+			for (int f = 0; f < RightHand.Fingers.Count; f++){
+				if(RightHand.Fingers[f].IsValid) 
+    				rightFingersRep[f].transform.position = new Vector3(RightHand.Fingers[f].TipPosition.x, RightHand.Fingers[f].TipPosition.y, -RightHand.Fingers[f].TipPosition.z);
+				else
+					rightFingersRep[f].active = false;
+			}
 			//for( int i = 0; i < 5 ; i ++)
 			//	palm1Finger[i].transform.position = new Vector3(frame.Fingers[0].TipPosition.x * 0.05f, frame.Fingers[0].TipPosition.y * 0.03f, frame.Fingers[0].TipPosition.z * -0.3f);
 					
@@ -231,13 +266,7 @@ public class ControllerCubeLevel2 : MonoBehaviour {
 					
 			//for (int i = 0; i < 5; i++)
 			//	palm1Finger[i].transform.position = new Vector3(LeftPalmPosition.x * 0.03f, LeftPalmPosition.y * 0.01f, LeftPalmPosition.z * -0.01f);
-					
-					
-			//rotazione rispetto all'asse dell'oggetto
-			float roll = LeftHand.PalmNormal.Roll * -10f;
-			float pitch = RightHand.PalmNormal.Pitch * -10f;
-					
-				
+								
 			
 		
 		}

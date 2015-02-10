@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 using Leap;
-using System;
+//using System;
 
 
 
@@ -9,7 +9,8 @@ public class ObjectControllerHuman : MonoBehaviour {
 	Controller LeapController;
 	
 	
-	public GameObject[] palm;
+	//public GameObject[] palm;
+	public GameObject Target;
 	
 	public GameObject OptionScale;
 	public GameObject OptionRotate;
@@ -44,15 +45,21 @@ public class ObjectControllerHuman : MonoBehaviour {
 	private float count;
 	
 	private bool rotationBool = false;  // temp, da mettere nel menu
-	private bool scaleBool = false;	   // temp, da mettere nel menu
+   // temp, da mettere nel menu
 	private bool rotateXBool = true;	// temp...
 	private bool rotateYBool = true ;	// temp...
 	private bool seeHandsBool = false;
 	//private bool otherRotation = false;
 	//private bool otherRotation2 = false;
-	private bool PinchRotationBool = false;
-	private bool PinchScaleBool = false;
-	private bool translatePinch = false;
+	private bool reachedGoal = false;
+	private int goalCounter;
+
+	private float TargetX;
+
+
+	private bool pinchScaleBool = false;
+	private bool scaleBool = false;
+	private bool sphereScaleBool = true;
 	
 	private string choice = null;
 	private string rotationSelection = null;
@@ -69,11 +76,13 @@ public class ObjectControllerHuman : MonoBehaviour {
 		LeapController.EnableGesture(Gesture.GestureType.TYPECIRCLE); // abilito il riconoscimento della gestre TYPECIRCLE
 		
 		// la visibilità dell'oggetto corrente viene messa di default a false
-		gameObject.active = false;
+		gameObject.active = true;
 		
 		// leggo nella stringa "choice" in PlayerPrefs, la quale viene impostata nel menù iniziale
 		// per la selezione dell'oggetto da manipolare
-		choice = PlayerPrefs.GetString ("choice");
+		refreshTargetScale();
+		goalCounter = 0;
+		transform.localScale = new Vector3(5f, 5f, 5f);
 		
 		// se l'oggetto corrente è l'oggetto selezionato, viene attivato
 	
@@ -106,262 +115,61 @@ public class ObjectControllerHuman : MonoBehaviour {
 		
 		// estraggo il contenuto delle stringhe di selezione impostate dalla VRGUI per
 		// vedere quali gesture sono attive
-		rotationSelection = PlayerPrefs.GetString ("rotation");
-		scaleSelection = PlayerPrefs.GetString ("scale");
-		pinchRotationSelection = PlayerPrefs.GetString ("pinchRotation");
-		pinchScaleSelection = PlayerPrefs.GetString ("pinchScale");
-		
-		
-		
-		// faccio un controllo sulle stringhe e metto a true le variabili 
-		// relative alle gesture che l'utente ha deciso di attivare
-		if(pinchScaleSelection.Equals("true"))
-			PinchScaleBool = true;
-		else 
-			PinchScaleBool = false;
-		
-		if(pinchRotationSelection.Equals("true"))
-			PinchRotationBool = true;
-		else 
-			PinchRotationBool = false;
-		
-		if(rotationSelection.Equals("true"))
-			rotationBool = true;
-		else 
-			rotationBool = false;
-		
-		if(scaleSelection.Equals("true"))
-			scaleBool = true;
-		else 
-			scaleBool = false;
-		
-		
-		
-		if(seeHandsBool == true)
-			seeHands();
-		
-		if(scaleBool == true)
+	
+		if(scaleBool)
 			scale();
-		
-		if (translatePinch == true)
-			TranslatePinch ();
-		
-		
-		// quando seleziono la rotazione con il pinch, controllo che sia fatto con la mano destra e sia maggiore di un dato valore
-		// chiamo la funzione per la rotazione
-		if (PinchRotationBool) {
+		if(pinchScaleBool)
+			PinchScale();
+		if(sphereScaleBool)
+			SphereScale();
+
+
+			//Debug.Log(transform.localScale + " " + Target.transform.localScale);
+			if(transform.localScale.x < Target.transform.localScale.x + 0.1f
+				&& transform.localScale.x > Target.transform.localScale.x - 0.1f)
+				//&& (CubePosition.x  < TargetPosition.x + 0.1 && CubePosition.x > TargetPosition.x -0.5)
+				reachedGoal = true;
+
 			
-			if (RightHand.PinchStrength > 0.7f) {
-				
-				renderer.material = ColorBlue;
-				
-				if (RightHand.IsValid && LeftHand.IsValid)
-					
-					PinchRotation ();
-				
-			} else {
-				renderer.material = ColorRed;
+
+			//Debug.Log(reachedGoal);
+
+			if(reachedGoal) {
+				//renderer.material = ColorRed;
+				refreshTargetScale();
+				transform.localScale = new Vector3(5f, 5f, 5f);
+				goalCounter++;
+				reachedGoal = false;	
+
 			}
-		}
-		
-		
-		
-		
-		if (RightHand.PinchStrength > 0.7f) {
-			
-			renderer.material = ColorBlue;
-			
-			if (RightHand.IsValid && LeftHand.IsValid)
-				
-				TranslatePinch();
-			
-		} else {
-			renderer.material = ColorRed;
-		}
-		
-		
-		
-		
-		//faccio la stessa procedura con la scala
-		if (PinchScaleBool) {
-			
-			if (RightHand.PinchStrength > 0.7f) {
-				
-				renderer.material = ColorBlue;
-				
-				if (RightHand.IsValid && LeftHand.IsValid)
-					PinchScale ();
-				
-			} else {
-				renderer.material = ColorRed;
+
+			if(goalCounter == 5){
+				Debug.Log(" Passa al prossimo livello");
+
+				// passa al livello successivo
 			}
-			
-		}
-		
-		
-		// se seleziono la rotazione normale, chiamo la funzione rotation	
-		if(rotationBool)
-			Rotation();
+
+
+
+
 		
 	}
-	
-	
-	
-	void Rotate(){
-		
-		roll = (LeftHand.PalmPosition.y * RightHand.PalmPosition.y) * 0.01f;
-		pitch = (LeftHand.PalmPosition.z * RightHand.PalmPosition.z) * 0.01f;
-		Vector3 RotationValue = new Vector3(0f,0f,0f);
-		
-		if(roll > 3f){
-			RotationValue.y = roll;
-			transform.Rotate(RotationValue, Time.deltaTime * 60f, Space.World);
+
+
+	void refreshTargetScale(){
+			
+			
+			TargetX = Random.Range(11f, 20f);
+			
+			//TargetZ = rnd.Next(1, 13);
+			Target.transform.localScale = new Vector3(TargetX, TargetX, TargetX);
+			
 		}
-		
-		if(pitch > 3f) { 
-			
-			RotationValue.z = pitch;
-			transform.Rotate(RotationValue, Time.deltaTime * 60f, Space.World);
-		}
-		
-		//metodo aggiornato, se è attivato il roll disattivo il pitch e viceversa (menu)
-		
-		if ((roll >= 3f || roll <= -3f) && rotateYBool == false){
-			
-			
-			if (roll >= 3)
-				transform.Rotate(RotationValue, Time.deltaTime * 90f, Space.World);
-			else 
-				transform.Rotate(Vector3.up, Time.deltaTime * -90f, Space.World);
-			
-			//transform.rotation = Quaternion.Slerp(transform.rotation, target, Time.deltaTime * smooth); // cambiare questa funzione, non è precisa!!!
-		}
-		
-		if ((pitch >= 18f || pitch <= 13f) && rotateXBool == true){ 	
-			
-			if (pitch >= 18)
-				transform.Rotate(Vector3.right, Time.deltaTime * -90f, Space.World);
-			else 
-				transform.Rotate(Vector3.right, Time.deltaTime * 90f, Space.World);
-			
-			//transform.rotation = Quaternion.Slerp(transform.rotation, target, Time.deltaTime * smooth); // cambiare questa funzione, non è precisa!!!
-		}
-		
-		
-	}
 	
 	
-	void Rotation() {
-		
-		// rotazione rispetto all'asse dello spazio				
-		if (LeftHand.IsValid && RightHand.IsValid) {	
-			
-			float roll = LeftHand.PalmNormal.Roll * -10f;
-			float pitch = RightHand.PalmNormal.Pitch * -10f;
-			
-			//metodo aggiornato, se è attivato il roll disattivo il pitch e viceversa (menu)				
-			if ((roll >= 3f || roll <= -3f) && rotateYBool == true) {
-				
-				if (roll >= 3)
-					transform.Rotate (Vector3.up, Time.deltaTime * 90f, Space.World);
-				else 
-					transform.Rotate (Vector3.up, Time.deltaTime * -90f, Space.World);
-				
-				//transform.rotation = Quaternion.Slerp(transform.rotation, target, Time.deltaTime * smooth); // cambiare questa funzione, non è precisa!!!
-			}
-			
-			if ((pitch >= 18f || pitch <= 13f) && rotateXBool == true) {
-				
-				
-				if (pitch >= 18)
-					transform.Rotate (Vector3.right, Time.deltaTime * -90f, Space.World);
-				else 
-					transform.Rotate (Vector3.right, Time.deltaTime * 90f, Space.World);
-				
-				//transform.rotation = Quaternion.Slerp(transform.rotation, target, Time.deltaTime * smooth); // cambiare questa funzione, non è precisa!!!
-			}
-		}
-		
-	}
 	
 	
-	// metodo per implementare la traslazione dell'oggetto tramite pinch
-	void TranslatePinch(){
-		transform.position = new Vector3(RightPalmPosition.x, RightPalmPosition.y, RightPalmPosition.z); 
-	}
-	
-	
-	void seeHands() {
-		
-		pinch = RightHand.PinchStrength;
-		
-		// funzione per muovere le due sfere che simulano i palmi delle mani
-		Vector3 normal1 = new Vector3(LeftHand.PalmNormal.x, LeftHand.PalmNormal.y, LeftHand.PalmNormal.z* -1);
-		Vector3 normal2 = new Vector3(RightHand.PalmNormal.x, RightHand.PalmNormal.y, RightHand.PalmNormal.z* -1);
-		
-		
-		if (pinch > 0.7f)
-			renderer.material = ColorRed;
-		else 
-			renderer.material = ColorBlue;
-		
-		
-		if(!LeftHand.IsValid)
-			palm[0].renderer.enabled = false;
-		if(!RightHand.IsValid)
-			palm[1].renderer.enabled = false;
-		
-		palm[0].transform.position = new Vector3(LeftPalmPosition.x , LeftPalmPosition.y , LeftPalmPosition.z  * (-1f));
-		palm[1].transform.position = new Vector3(RightPalmPosition.x , RightPalmPosition.y , RightPalmPosition.z * (-1f));
-		
-		palm[0].transform.rotation = Quaternion.FromToRotation(Vector3.up, normal1);
-		palm[0].transform.rotation = Quaternion.FromToRotation(Vector3.up, normal2);
-		
-		
-		//for( int i = 0; i < 5 ; i ++)
-		//	palm1Finger[i].transform.position = new Vector3(frame.Fingers[0].TipPosition.x * 0.05f, frame.Fingers[0].TipPosition.y * 0.03f, frame.Fingers[0].TipPosition.z * -0.3f);
-		
-		//palm[0].transform.position = new Vector3(LeftPalmPosition.x, LeftPalmPosition.y, LeftPalmPosition.z);
-		//palm[1].transform.position = new Vector3(RightPalmPosition.x, RightPalmPosition.y, RightPalmPosition.z);
-		
-		
-		//for (int i = 0; i < 5; i++)
-		//	palm1Finger[i].transform.position = new Vector3(LeftPalmPosition.x * 0.03f, LeftPalmPosition.y * 0.01f, LeftPalmPosition.z * -0.01f);
-		
-		
-		//rotazione rispetto all'asse dell'oggetto
-		float roll = LeftHand.PalmNormal.Roll * -10f;
-		float pitch = RightHand.PalmNormal.Pitch * -10f;
-		
-		
-		
-		//metodo aggiornato, se è attivato il roll disattivo il pitch e viceversa (menu)
-		if (LeftHand.IsValid || RightHand.IsValid) {
-			if ((roll >= 3f || roll <= -3f) && rotateYBool == true) {
-				
-				
-				if (roll >= 3)
-					transform.RotateAround (transform.position, transform.up, Time.deltaTime * 90f);
-				else 
-					transform.RotateAround (transform.position, transform.up, Time.deltaTime * -90f);
-				
-				//transform.rotation = Quaternion.Slerp(transform.rotation, target, Time.deltaTime * smooth); // cambiare questa funzione, non è precisa!!!
-			}
-			
-			if ((pitch >= 18f || pitch <= 13f) && rotateXBool == true) {
-				
-				
-				if (pitch >= 18)
-					transform.RotateAround (transform.position, transform.right, Time.deltaTime * -90f);
-				else 
-					transform.RotateAround (transform.position, transform.right, Time.deltaTime * 90f);
-				
-				//transform.rotation = Quaternion.Slerp(transform.rotation, target, Time.deltaTime * smooth); // cambiare questa funzione, non è precisa!!!
-			}
-		}
-		
-	}
-	
+
 	
 	/* funzione che ingrandisce e rimpicciolisce l'oggetto, da implementare metodo per 
 				farlo smettere: dopo tot secondi che non rimpicciolisco (troppo: provious scale- actual scale <= valore basso
@@ -386,53 +194,51 @@ public class ObjectControllerHuman : MonoBehaviour {
 		}
 		
 	}
-	
-	
+
 	void PinchScale() {
 		
 		//cambio la scala solo se tutte e due le mani sono presenti
 		if (LeftHand.IsValid && RightHand.IsValid ) {
-			
-			float sphereDiameter = 2 * LeftHand.SphereRadius;
-			
-			transform.doScale (sphereDiameter * 100f);
+
+			float pinchRight = RightHand.PinchStrength;
+			float scaleValue = pinchRight * 500f;
+
+			if(pinchRight > 0.6)
+				scaleValue -= 250f;
+
+			if(pinchRight < 0.35)
+				scaleValue += 250f;
+
+			//Debug.Log(pinchRight);
+			/***************************************   DA TESTARE !!!!!!!!!!!!!   ***************************/
+			transform.localScale = new Vector3(scaleValue * 0.03f,scaleValue * 0.03f,scaleValue * 0.03f);
+			//cambio la scala, utilizzo il pinch della mano destra per ingrandire o rimpicciolire
 		}
 	}
 	
 	
-	// funzione per la rotazione tramite la circle gesture
-	void PinchRotation() {
-		
-		string clockwiseness = null;
-		
+	void SphereScale() {
+		/* sposto il metodo in PinchScale per la scala qui*/
+
 		if (LeftHand.IsValid && RightHand.IsValid) {
-			
-			GestureList gesture = frame.Gestures ();
-			
-			for (int i = 0; i < gesture.Count; i++) {
-				
-				CircleGesture circle = new CircleGesture (gesture [i]);
-				string state = circle.State.ToString ();
-				
-				if (state.Equals ("STATE_UPDATE")){
-					
-					if (circle.Pointable.Direction.AngleTo(circle.Normal) <= Math.PI/2) {
-						//clockwiseness
-						transform.Rotate (Vector3.up, Time.deltaTime * -90f, Space.World);
-					}
-					
-					else {
-						//clockwiseness
-						transform.Rotate (Vector3.up, Time.deltaTime * 90f, Space.World);
-					}
-					
-					
+
+						// ancora da testare
+						float sphereDiameter = 2 * LeftHand.SphereRadius;
+						float scaleValue = sphereDiameter * 20f;
+
+						// guardare valori reali di sphere Diameter !!!!!!!!!!!!!!
+						if(sphereDiameter > 100f)
+							scaleValue += 20f;
+
+						if(sphereDiameter > -100f)
+							scaleValue -= 20f;
+
+						transform.localScale = new Vector3(scaleValue * 0.005f,scaleValue * 0.005f,scaleValue * 0.005f);
 				}
-			}
-			
-		}
-		
 	}
+	
+	
+	
 	
 }
 

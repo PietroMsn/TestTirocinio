@@ -1,0 +1,47 @@
+// Per la traslazione si potrebbe creare una sorta di joystick da spostare con con il dito...selezioni l'oggetto toccandolo e poi sposti //il dito nella direzione in cui lo devi far andare.
+
+
+// per la rotazione fare la stessa cosa col joystick
+
+
+///////////  IMPORTANTE !!!!!!!!!!!!!!!!
+
+
+Per oggi far funzionare questo!!!!!
+
+- risistemare ObjectControllerCube
+- vedere perchè lo script non funziona
+- far funzionare la rotazione sulla terra
+- finire tutte e tre le rotazioni (provare quella col joystick)
+- mettere l'opzione che continui la rotazione sopra una certa posizione (nella rotazione due) 
+- mettere lo screen tap per selezionare l'oggetto
+- mettere il palmo della mano per abilitare la traslazione tramite corpo rigido
+
+
+
+////////// RIEPILOGO GESTURE  ////////////////
+
+- traslazione: con il pinch sull'oggetto lo sposto spostando la mano 
+- rotazione: con l'inclinazione del palmo della mano
+- scala: allargando e stringendo le due mani reciprocamente
+
+- traslazione: seleziono col tap l'oggetto e si sposta con il dito
+- rotazione: guardo la posizione dell'indice rispetto al centro dell'oggetto e ruoto in quella direzione
+- scala: allargando e restringendo il palmo della mano (diametro della sfera immaginaria sottostante)
+
+- traslazione: guardo la distanza dell'indice dal centro dell'oggetto e lo sposto in quella direzione
+- rotazione: spostando le mani in maniera inversa l'una all'altra in orizzontale e in verticale
+- scala: utilizzo il pinch per ingrandire e rimpicciolire
+
+
+
+provare a impostare leap in unity free sul computer del lab.
+
+caricare il modello della visualizzazione delle mani con il package Leap + vr
+
+finire la presentazione del tirocinio con tutte le gesture implementate
+
+impostare il timer per i livelli e il tasto start
+
+
+
